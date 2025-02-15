@@ -1,0 +1,12 @@
+# Ignore the virtual environment directory
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Database files (if using SQLite)
+*.sqlite3
+
+# Environment variables file (if any)
+.env
