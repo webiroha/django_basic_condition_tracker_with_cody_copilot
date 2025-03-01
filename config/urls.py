@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.supplement_record, name='supplement_record'),
     path('delete/<int:record_id>/', views.delete_record, name='delete_record'),
+    path('edit/<int:record_id>/', views.edit_record, name='edit_record'),
 ]

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Edit Record</title>
+    <style>
+      .form-container {
+        max-width: 500px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      .button {
+        padding: 5px 10px;
+        margin: 5px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .save-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+      }
+      .cancel-btn {
+        background-color: #808080;
+        color: white;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <h1>Edit Record</h1>
+      <form method="POST">
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit" class="button save-btn">Save Changes</button>
+        <a href="{% url 'supplement_record' %}" class="button cancel-btn"
+          >Cancel</a
+        >
+      </form>
+    </div>
+  </body>
+</html>
