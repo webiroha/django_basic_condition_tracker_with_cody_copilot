@@ -23,8 +23,79 @@
         background-color: #44b;
       }
     </style>
+    <script>
+      // Local storage handling
+      class LocalStorageManager {
+        constructor() {
+          this.storageKey = "supplementRecords";
+        }
+
+        saveRecord(record) {
+          let records = this.getAllRecords();
+          record.id = Date.now().toString(); // Generate local ID
+          records.push(record);
+          localStorage.setItem(this.storageKey, JSON.stringify(records));
+          return record;
+        }
+
+        getAllRecords() {
+          return JSON.parse(localStorage.getItem(this.storageKey) || "[]");
+        }
+
+        deleteRecord(id) {
+          let records = this.getAllRecords();
+          records = records.filter((record) => record.id !== id);
+          localStorage.setItem(this.storageKey, JSON.stringify(records));
+        }
+
+        updateRecord(id, updatedRecord) {
+          let records = this.getAllRecords();
+          records = records.map((record) =>
+            record.id === id ? { ...record, ...updatedRecord } : record
+          );
+          localStorage.setItem(this.storageKey, JSON.stringify(records));
+        }
+      }
+
+      // Sync function
+      async function syncWithBackend() {
+        const storage = new LocalStorageManager();
+        const localRecords = storage.getAllRecords();
+
+        try {
+          const response = await fetch("/sync-data/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": document.querySelector(
+                "[name=csrfmiddlewaretoken]"
+              ).value,
+            },
+            body: JSON.stringify({ records: localRecords }),
+          });
+
+          if (response.ok) {
+            localStorage.clear();
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error("Sync failed:", error);
+        }
+      }
+    </script>
   </head>
   <body>
+    {% if user.is_authenticated %}
+    <p>Welcome, {{ user.username }}! <a href="{% url 'logout' %}">Logout</a></p>
+    {% if has_local_data %}
+    <button onclick="syncWithBackend()">Sync Local Data</button>
+    {% endif %} {% else %}
+    <p>
+      <a href="{% url 'login' %}">Login</a> or
+      <a href="{% url 'register' %}">Register</a>
+    </p>
+    {% endif %}
+
     <h1>Record Supplement Intake</h1>
 
     <form method="POST">
