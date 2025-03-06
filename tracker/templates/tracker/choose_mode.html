@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Choose Mode</title>
+  </head>
+  <body>
+    <h2>Welcome to Supplement Tracker</h2>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="guest">Continue as Guest</button>
+      <button type="submit" name="login">Login</button>
+    </form>
+    <p>New user? <a href="{% url 'register' %}">Register here</a></p>
+  </body>
+</html>
