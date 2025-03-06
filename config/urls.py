@@ -26,4 +26,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', LogoutView.as_view(next_page='choose_mode'), name='logout'),
+    path('edit/<int:record_id>/', views.edit_record, name='edit_record'),
+    path('delete/<int:record_id>/', views.delete_record, name='delete_record'),
 ]
