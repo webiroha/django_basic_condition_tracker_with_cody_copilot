@@ -31,12 +31,21 @@ def supplement_record(request):
     })
 
 def choose_mode(request):
+    # If user is already logged in, redirect to supplement record page
+    if request.user.is_authenticated:
+        return redirect('supplement_record')
+
+    # If user is in guest mode, redirect to supplement record page
+    if request.session.get('is_guest'):
+        return redirect('supplement_record')
+
     if request.method == 'POST':
         if 'guest' in request.POST:
             request.session['is_guest'] = True
             return redirect('supplement_record')
         elif 'login' in request.POST:
             return redirect('login')
+
     return render(request, 'tracker/choose_mode.html')
 
 def edit_record(request, record_id):
