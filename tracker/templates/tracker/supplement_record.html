@@ -1,26 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <title>Supplement Tracker</title>
     <style>
-      .record-item {
-        margin: 10px 0;
-        padding: 5px;
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        margin: 0;
+        min-height: 100vh;
+        padding: 2rem;
       }
-      .button {
-        color: white;
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .card {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+      h1,
+      h2 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+      }
+      form {
+        display: grid;
+        gap: 1rem;
+      }
+      input,
+      select {
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+      }
+      button {
+        padding: 0.8rem 1.5rem;
         border: none;
-        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 1rem;
         cursor: pointer;
-        border-radius: 3px;
-        text-decoration: none;
-        margin-left: 5px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background: #3498db;
+        color: white;
       }
-      .delete-btn {
-        background-color: #ff4444;
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .record-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .record-item {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .record-info {
+        flex-grow: 1;
+      }
+      .button-group {
+        display: flex;
+        gap: 0.5rem;
       }
       .edit-btn {
-        background-color: #44b;
+        background: #2ecc71;
+      }
+      .delete-btn {
+        background: #e74c3c;
+      }
+      .user-info {
+        text-align: right;
+        margin-bottom: 2rem;
+      }
+      .logout-btn {
+        background: #95a5a6;
       }
     </style>
     <script>
@@ -135,52 +198,58 @@
     </script>
   </head>
   <body>
-    {% if user.is_authenticated %}
-        <p>Welcome, {{ user.username }}!
-            <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit">Logout</button>
-            </form>
-        </p>
-        {% if has_local_data %}
-        <button onclick="syncWithBackend()">Sync Local Data</button>
+    <div class="container">
+      <div class="user-info">
+        {% if user.is_authenticated %}
+        <span>Welcome, {{ user.username }}!</span>
+        {% else %}
+        <span>Guest Mode</span>
         {% endif %}
-    {% else %}
-        <p><a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Register</a></p>
-    {% endif %}
-    <h1>Record Supplement Intake</h1>
+        <form method="post" action="{% url 'logout' %}" style="display: inline">
+          {% csrf_token %}
+          <button type="submit">Logout</button>
+        </form>
+      </div>
 
-    {% if user.is_authenticated %}
+      <div class="card">
+        <h1>Record Supplement Intake</h1>
+        {% if user.is_authenticated %}
         <form method="POST">
           {% csrf_token %} {{ form.as_p }}
+          <button type="submit">Save Record</button>
+        </form>
+        {% else %}
+        <form onsubmit="saveLocalRecord(event)">
+          <p>
+            <label>Supplement Name:</label>
+            <input type="text" name="supplement_name" required />
+          </p>
+          <p>
+            <label>Date and Time:</label>
+            <input type="datetime-local" name="intake_datetime" required />
+          </p>
+          <p>
+            <label>Amount:</label>
+            <input type="number" name="amount" step="0.01" required />
+          </p>
           <button type="submit">Save</button>
         </form>
-    {% else %}
-        <form onsubmit="saveLocalRecord(event)">
-            <p>
-                <label>Supplement Name:</label>
-                <input type="text" name="supplement_name" required>
-            </p>
-            <p>
-                <label>Date and Time:</label>
-                <input type="datetime-local" name="intake_datetime" required>
-            </p>
-            <p>
-                <label>Amount:</label>
-                <input type="number" name="amount" step="0.01" required>
-            </p>
-            <button type="submit">Save</button>
-        </form>
-    {% endif %}
+        {% endif %}
+      </div>
 
-    <h2>Recent Records</h2>
-    <ul id="records-list" style="list-style-type: none; padding: 0;">
-        {% if user.is_authenticated %}
-            {% for record in records %}
-            <li class="record-item">
-              <h3>{{ record.supplement_name }}</h3>
-              {{ record.intake_datetime }} - {{ record.amount }}
-              <a href="{% url 'edit_record' record.id %}" class="button edit-btn"
+      <div class="card">
+        <h2>Recent Records</h2>
+        <ul class="records-list">
+          {% if user.is_authenticated %} {% for record in records %}
+          <li class="record-item">
+            <div class="record-info">
+              <span>{{ record.intake_datetime }}</span>
+              {{ record.supplement_name }} - {{ record.amount }}
+            </div>
+            <div class="button-group">
+              <a
+                href="{% url 'edit_record' record.id %}"
+                class="button edit-btn"
                 >Edit</a
               >
               <a
@@ -189,9 +258,11 @@
                 class="button delete-btn"
                 >Delete</a
               >
-            </li>
-            {% endfor %}
-        {% endif %}
-    </ul>
+            </div>
+          </li>
+          {% endfor %} {% endif %}
+        </ul>
+      </div>
+    </div>
   </body>
 </html>
