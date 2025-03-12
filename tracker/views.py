@@ -5,48 +5,28 @@ from .models import SupplementRecord
 from django.http import JsonResponse
 import json
 
+@login_required
 def supplement_record(request):
-    if not (request.user.is_authenticated or request.session.get('is_guest')):
-        return redirect('choose_mode')
-
     if request.method == 'POST':
         form = SupplementRecordForm(request.POST)
         if form.is_valid():
             record = form.save(commit=False)
-            if request.user.is_authenticated:
-                record.user = request.user
+            record.user = request.user
             record.save()
             return redirect('supplement_record')
     else:
         form = SupplementRecordForm()
 
-    if request.user.is_authenticated:
-        records = SupplementRecord.objects.filter(user=request.user)
-    else:
-        records = SupplementRecord.objects.filter(user=None)
-
+    records = SupplementRecord.objects.filter(user=request.user)
     return render(request, 'tracker/supplement_record.html', {
         'form': form,
         'records': records
     })
 
 def choose_mode(request):
-    # If user is already logged in, redirect to supplement record page
     if request.user.is_authenticated:
         return redirect('supplement_record')
-
-    # If user is in guest mode, redirect to supplement record page
-    if request.session.get('is_guest'):
-        return redirect('supplement_record')
-
-    if request.method == 'POST':
-        if 'guest' in request.POST:
-            request.session['is_guest'] = True
-            return redirect('supplement_record')
-        elif 'login' in request.POST:
-            return redirect('login')
-
-    return render(request, 'tracker/choose_mode.html')
+    return redirect('login')
 
 def edit_record(request, record_id):
     record = get_object_or_404(SupplementRecord, id=record_id)
