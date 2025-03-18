@@ -4,6 +4,7 @@ from .forms import SupplementRecordForm
 from .models import SupplementRecord
 from django.http import JsonResponse
 import json
+from django.contrib import messages
 
 @login_required
 def supplement_record(request):
@@ -13,6 +14,7 @@ def supplement_record(request):
             record = form.save(commit=False)
             record.user = request.user
             record.save()
+            messages.success(request, "Supplement record added successfully!")
             return redirect('supplement_record')
     else:
         form = SupplementRecordForm()
