@@ -18,8 +18,7 @@ def supplement_record(request):
             return redirect('supplement_record')
     else:
         form = SupplementRecordForm()
-
-    records = SupplementRecord.objects.filter(user=request.user)
+    records = SupplementRecord.objects.filter(user=request.user).order_by('-intake_datetime')
     return render(request, 'tracker/supplement_record.html', {
         'form': form,
         'records': records
