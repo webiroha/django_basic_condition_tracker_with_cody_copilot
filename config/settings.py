@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
-import logging.config
+from decouple import config, Csv, UndefinedValueError
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,13 +22,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'default-key-for-dev-only')
+try:
+    SECRET_KEY = config('DJANGO_SECRET_KEY')
+except UndefinedValueError:
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY environment variable is required")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 # Get allowed hosts from environment variable or use defaults
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.vercel.app,localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 
 # Application definition
@@ -43,8 +46,11 @@ INSTALLED_APPS = [
     'tracker',
 ]
 
+INSTALLED_APPS += ['django_ratelimit']
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django_permissions_policy.PermissionsPolicyMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,7 +65,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,7 +89,13 @@ if os.environ.get('DATABASE_URL'):
     # Use dj_database_url for production database configuration
     import dj_database_url
     DATABASES = {
-        'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+        'default': {
+            **dj_database_url.config(default=os.environ.get('DATABASE_URL')),
+            'CONN_MAX_AGE': 600,  # 10 minutes
+            'OPTIONS': {
+                'connect_timeout': 5,
+            }
+        }
     }
 else:
     # Use SQLite for development
@@ -104,6 +116,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -111,6 +126,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
 ]
 
 
@@ -129,10 +150,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+# Consolidate static files settings
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if not os.environ.get('VERCEL') else []
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -148,12 +169,38 @@ if os.environ.get('VERCEL'):
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
     STATIC_URL = '/static/'
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31536000  # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# Security settings - Make them conditional based on environment
+if not DEBUG:  # Only enable these settings in production
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    CSRF_COOKIE_DOMAIN = None  # Restrict to same origin
+    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_NAME = '__Secure-csrftoken'  # Only when using HTTPS
+    CSRF_COOKIE_SAMESITE = 'Lax'
+else:  # Development settings
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Additional security headers
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# Add session security settings
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_NAME = '__Secure-sessionid'  # Only when using HTTPS
 
 # Logging Configuration
 LOGGING = {
@@ -177,8 +224,10 @@ LOGGING = {
         },
         'file': {
             'level': 'WARNING',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'django.log'),
+            'maxBytes': 1024*1024*5,  # 5 MB
+            'backupCount': 5,
             'formatter': 'verbose',
         },
     },
@@ -196,4 +245,34 @@ LOGGING = {
     },
 }
 
+# Add request logging for security monitoring
+LOGGING['loggers']['django.request'] = {
+    'handlers': ['console', 'file'],
+    'level': 'WARNING',
+    'propagate': True,
+}
+
 os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
+
+# Cache settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+            'KEY_PREFIX': 'prod' if not DEBUG else 'dev'
+        }
+    }
+}
+
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+RATELIMIT_FAIL_OPEN = False
+
+PERMISSIONS_POLICY = {
+    'geolocation': 'none',
+    'camera': 'none',
+    'microphone': 'none',
+}
