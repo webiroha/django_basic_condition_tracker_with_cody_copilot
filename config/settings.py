@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from decouple import config, Csv, UndefinedValueError
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -84,27 +85,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Database configuration based on environment
-if os.environ.get('DATABASE_URL'):
-    # Use dj_database_url for production database configuration
-    import dj_database_url
-    DATABASES = {
-        'default': {
-            **dj_database_url.config(default=os.environ.get('DATABASE_URL')),
-            'CONN_MAX_AGE': 600,  # 10 minutes
-            'OPTIONS': {
-                'connect_timeout': 5,
-            }
-        }
+# Database configuration - Using SQLite for both development and production
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
-else:
-    # Use SQLite for development
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
-    }
+}
 
 
 # Password validation
@@ -261,21 +248,21 @@ os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 # Cache settings
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'TIMEOUT': 300,  # 5 minutes
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
         'OPTIONS': {
             'MAX_ENTRIES': 1000,
-            'KEY_PREFIX': 'prod' if not DEBUG else 'dev'
-        }
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'dev' if DEBUG else 'prod'
     }
 }
 
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_FAIL_OPEN = False
-RATELIMIT_IP_META = 'HTTP_X_FORWARDED_FOR'  # Add this for proper IP detection behind proxy
-RATELIMIT_VIEW = 'django.http.HttpResponseForbidden'  # Add this
+RATELIMIT_IP_META = 'HTTP_X_FORWARDED_FOR'
+RATELIMIT_VIEW = 'django.http.HttpResponseForbidden'
 
 PERMISSIONS_POLICY = {
     'geolocation': 'none',
