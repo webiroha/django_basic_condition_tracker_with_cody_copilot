@@ -13,3 +13,7 @@ __pycache__/
 
 # Cache directory
 django_cache/
+
+# Ignore Django log files
+*.log
+django_debug.log
