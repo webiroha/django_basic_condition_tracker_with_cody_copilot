@@ -20,7 +20,7 @@ A simple web application for tracking supplement intake. This MVP allows users t
 
 ## Live Demo
 
-You can access the live version of Supplement Tracker at: [your-deployment-url.com](https://your-deployment-url.com)
+You can access the live version of Supplement Tracker at: [django-basic-condition-tracker-with-cody.vercel.app](https://django-basic-condition-tracker-with-cody.vercel.app/)
 
 ## Getting Started
 
