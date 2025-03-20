@@ -1,5 +1,7 @@
 # Supplement Tracker
 
+> **Note**: This application was developed in collaboration with Cody, an AI coding assistant from Sourcegraph.
+
 A simple web application for tracking supplement intake. This MVP allows users to record, view, edit, and delete their supplement intake records.
 
 ## Features
@@ -13,8 +15,12 @@ A simple web application for tracking supplement intake. This MVP allows users t
 
 - Backend: Django
 - Frontend: HTML, CSS, JavaScript
-- Database: SQLite (development), PostgreSQL (production-ready)
+- Database: SQLite (development)
 - Authentication: Django's built-in authentication system
+
+## Live Demo
+
+You can access the live version of Supplement Tracker at: [your-deployment-url.com](https://your-deployment-url.com)
 
 ## Getting Started
 
@@ -62,6 +68,19 @@ python manage.py runserver
 2. Add supplement intake records with name, date/time, and amount
 3. View your history of supplement intake
 4. Edit or delete records as needed
+
+## Project Status
+
+This project is currently in MVP (Minimum Viable Product) stage:
+
+- **Development Status**: Early development, suitable for testing
+- **Security Status**: Basic authentication implemented, but not yet audited for production use
+- **Known Issues**:
+  - Form validation needs improvement
+  - No CSRF protection for API endpoints
+  - Session management could be enhanced
+  - No rate limiting implemented
+  - Password reset functionality not implemented
 
 ## License
 
