@@ -51,6 +51,7 @@ INSTALLED_APPS += ['django_ratelimit']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.cache.UpdateCacheMiddleware',
     'django_permissions_policy.PermissionsPolicyMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -58,6 +59,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -66,7 +68,10 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+            os.path.join(BASE_DIR, 'templates', 'errors'),  # Add error templates
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -173,6 +178,19 @@ if not DEBUG:  # Only enable these settings in production
     CSRF_COOKIE_SAMESITE = 'Lax'
     CACHE_MIDDLEWARE_SECONDS = 60 * 60 * 24  # 24 hours
     USE_ETAGS = True
+
+    # Verify critical production settings
+    required_settings = {
+        'REDIS_URL': os.environ.get('REDIS_URL'),
+        'DJANGO_SECRET_KEY': os.environ.get('DJANGO_SECRET_KEY'),
+        'ALLOWED_HOSTS': os.environ.get('ALLOWED_HOSTS'),
+    }
+
+    missing_settings = [k for k, v in required_settings.items() if not v]
+    if missing_settings:
+        raise ImproperlyConfigured(
+            f"Missing required production settings: {', '.join(missing_settings)}"
+        )
 else:  # Development settings
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
@@ -181,6 +199,16 @@ else:  # Development settings
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
 
+
+"""
+Security Headers Configuration
+----------------------------
+- XSS Filter: Enabled
+- Content Type Options: No-sniff
+- X-Frame-Options: DENY
+- Referrer Policy: Same-origin
+- HSTS: Enabled in production
+"""
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
@@ -192,6 +220,10 @@ SECURE_REFERRER_POLICY = 'same-origin'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = '__Secure-sessionid'  # Only when using HTTPS
+
+# Session Configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_CACHE_ALIAS = 'default'
 
 # Logging Configuration
 LOGGING = {
@@ -246,17 +278,40 @@ LOGGING['loggers']['django.request'] = {
 os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
 # Cache settings
+"""
+Cache Configuration
+-----------------
+BACKEND: Redis cache for both development and production
+TIMEOUT: 5 minutes (300 seconds)
+MAX_ENTRIES: 1000 entries maximum
+KEY_PREFIX: Environment-aware prefixing (dev/prod)
+"""
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
         'OPTIONS': {
             'MAX_ENTRIES': 1000,
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
-        'KEY_PREFIX': 'dev' if DEBUG else 'prod'
+        'KEY_PREFIX': 'dev' if DEBUG else 'prod',
+        'TIMEOUT': 300  # 5 minutes default timeout
     }
 }
+
+if not DEBUG and not os.environ.get('REDIS_URL'):
+    import warnings
+    warnings.warn("Redis URL not set in production environment")
+
+"""
+Rate Limiting Configuration
+-------------------------
+- Global rate limiting enabled
+- Uses Redis cache backend
+- Strict limiting with fail_open=False
+- IP detection via X-Forwarded-For
+- Custom error response on limit exceeded
+"""
 
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
@@ -269,3 +324,27 @@ PERMISSIONS_POLICY = {
     'camera': 'none',
     'microphone': 'none',
 }
+
+def validate_env_vars():
+    """Validate critical environment variables on startup."""
+    required_vars = {
+        'DJANGO_SECRET_KEY': 'Required for security',
+        'ALLOWED_HOSTS': 'Required in production',
+        'REDIS_URL': 'Required for caching in production'
+    }
+
+    if not DEBUG:
+        missing = [var for var, msg in required_vars.items()
+                  if not config(var, default=None)]
+        if missing:
+            raise ImproperlyConfigured(
+                f"Missing required environment variables: {', '.join(missing)}"
+            )
+
+# Call at the end of settings.py
+validate_env_vars()
+
+# Error handling configuration
+handler404 = 'tracker.views.custom_404'
+handler500 = 'tracker.views.custom_500'
+handler403 = 'tracker.views.custom_403'
