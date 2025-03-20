@@ -154,6 +154,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if not os.environ.get('VERCEL') else []
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_MAX_AGE = 31536000  # 1 year
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -182,6 +184,8 @@ if not DEBUG:  # Only enable these settings in production
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_NAME = '__Secure-csrftoken'  # Only when using HTTPS
     CSRF_COOKIE_SAMESITE = 'Lax'
+    CACHE_MIDDLEWARE_SECONDS = 60 * 60 * 24  # 24 hours
+    USE_ETAGS = True
 else:  # Development settings
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
@@ -270,6 +274,8 @@ CACHES = {
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_FAIL_OPEN = False
+RATELIMIT_IP_META = 'HTTP_X_FORWARDED_FOR'  # Add this for proper IP detection behind proxy
+RATELIMIT_VIEW = 'django.http.HttpResponseForbidden'  # Add this
 
 PERMISSIONS_POLICY = {
     'geolocation': 'none',
