@@ -6,6 +6,7 @@ from django.http import JsonResponse
 import json
 from django.contrib import messages
 from django_ratelimit.decorators import ratelimit
+from django.views.decorators.csrf import csrf_protect
 
 @ratelimit(key='user_or_ip', rate='10/m')
 @login_required
@@ -54,6 +55,7 @@ def delete_record(request, record_id):
     record.delete()
     return redirect('supplement_record')
 
+@csrf_protect
 def sync_data(request):
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Not authenticated'}, status=401)
