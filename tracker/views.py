@@ -7,7 +7,9 @@ import json
 from django.contrib import messages
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_http_methods
 
+@require_http_methods(["GET", "POST"])
 @ratelimit(key='user_or_ip', rate='10/m')
 @login_required
 def supplement_record(request):
