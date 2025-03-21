@@ -13,6 +13,14 @@ from django.views.decorators.http import require_http_methods
 @ratelimit(key='user_or_ip', rate='10/m')
 @login_required
 def supplement_record(request):
+    """
+    Handle supplement record creation and listing.
+
+    GET: Display form and list of user's supplement records
+    POST: Create new supplement record
+
+    Requires authentication
+    """
     if request.method == 'POST':
         form = SupplementRecordForm(request.POST)
         if form.is_valid():
