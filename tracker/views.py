@@ -91,6 +91,7 @@ def sync_data(request):
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
+@ratelimit(key='ip', rate='5/m', method=['POST'])
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -107,6 +108,7 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'tracker/login.html', {'form': form})
 
+@ratelimit(key='ip', rate='3/m', method=['POST'])
 def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
