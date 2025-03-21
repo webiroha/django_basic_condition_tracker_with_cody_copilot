@@ -10,6 +10,13 @@ class ViewsTestCase(TestCase):
             username='testuser',
             password='testpass123'
         )
+        # Create test record
+        self.record = SupplementRecord.objects.create(
+            user=self.user,
+            supplement_name='Test Supplement',
+            amount=1,
+            intake_datetime='2024-03-21 10:00:00'
+        )
 
     def test_login_view(self):
         response = self.client.post(reverse('login'), {
@@ -18,3 +25,42 @@ class ViewsTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('supplement_record'))
+
+    def test_failed_login(self):
+        response = self.client.post(reverse('login'), {
+            'username': 'testuser',
+            'password': 'wrongpassword'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invalid username or password")
+
+    def test_supplement_record_view(self):
+        # Login first
+        self.client.login(username='testuser', password='testpass123')
+        # Test GET request
+        response = self.client.get(reverse('supplement_record'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'tracker/supplement_record.html')
+
+    def test_edit_record(self):
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(
+            reverse('edit_record', kwargs={'record_id': self.record.id}),
+            {
+                'supplement_name': 'Updated Supplement',
+                'amount': 2,
+                'intake_datetime': '2024-03-21 11:00:00'
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        updated_record = SupplementRecord.objects.get(id=self.record.id)
+        self.assertEqual(updated_record.supplement_name, 'Updated Supplement')
+
+    def test_delete_record(self):
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(
+            reverse('delete_record', kwargs={'record_id': self.record.id})
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.assertRaises(SupplementRecord.DoesNotExist):
+            SupplementRecord.objects.get(id=self.record.id)
