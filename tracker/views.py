@@ -60,9 +60,13 @@ def edit_record(request, record_id):
         'record': record
     })
 
+@require_http_methods(["POST"])
+@login_required
+@csrf_protect
 def delete_record(request, record_id):
-    record = get_object_or_404(SupplementRecord, id=record_id)
+    record = get_object_or_404(SupplementRecord, id=record_id, user=request.user)  # Add user check
     record.delete()
+    messages.success(request, "Record deleted successfully!")
     return redirect('supplement_record')
 
 @csrf_protect
