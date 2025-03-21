@@ -154,9 +154,10 @@ WHITENOISE_MAX_AGE = 31536000  # 1 year
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Add these to your existing settings
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+# Authentication URLs and redirects
+LOGIN_URL = 'login'  # Remove leading slash
+LOGIN_REDIRECT_URL = 'supplement_record'  # Use URL name instead of path
+LOGOUT_REDIRECT_URL = 'choose_mode'  # Use URL name instead of path
 
 if os.environ.get('VERCEL'):
     STATICFILES_DIRS = []
@@ -219,7 +220,7 @@ SECURE_REFERRER_POLICY = 'same-origin'
 # Add session security settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_NAME = '__Secure-sessionid'  # Only when using HTTPS
+SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
@@ -290,12 +291,8 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000,
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
+        'TIMEOUT': 300,  # 5 minutes default timeout
         'KEY_PREFIX': 'dev' if DEBUG else 'prod',
-        'TIMEOUT': 300  # 5 minutes default timeout
     }
 }
 
