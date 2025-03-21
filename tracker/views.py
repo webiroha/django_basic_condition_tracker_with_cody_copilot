@@ -32,12 +32,15 @@ def choose_mode(request):
     return redirect('login')
 
 def edit_record(request, record_id):
-    record = get_object_or_404(SupplementRecord, id=record_id)
+    record = get_object_or_404(SupplementRecord, id=record_id, user=request.user)  # Add user check
     if request.method == 'POST':
         form = SupplementRecordForm(request.POST, instance=record)
         if form.is_valid():
             form.save()
+            messages.success(request, "Record updated successfully!")
             return redirect('supplement_record')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = SupplementRecordForm(instance=record)
 
