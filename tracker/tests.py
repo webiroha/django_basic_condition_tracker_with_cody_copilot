@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import SupplementRecord
+from django.test.utils import override_settings
 
 class ViewsTestCase(TestCase):
     def setUp(self):
@@ -64,3 +65,21 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         with self.assertRaises(SupplementRecord.DoesNotExist):
             SupplementRecord.objects.get(id=self.record.id)
+
+class RateLimitTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+
+    @override_settings(RATELIMIT_ENABLE=True)
+    def test_login_rate_limit(self):
+        # Make 6 requests (rate limit is 5/minute)
+        for _ in range(6):
+            response = self.client.post(reverse('login'), {
+                'username': 'testuser',
+                'password': 'wrongpass'
+            })
+        self.assertEqual(response.status_code, 403)  # Should be rate limited
