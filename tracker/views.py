@@ -101,6 +101,8 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 return redirect('supplement_record')
+            else:
+                messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
     return render(request, 'tracker/login.html', {'form': form})
