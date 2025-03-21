@@ -5,7 +5,9 @@ from .models import SupplementRecord
 from django.http import JsonResponse
 import json
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
 
+@ratelimit(key='user_or_ip', rate='10/m')
 @login_required
 def supplement_record(request):
     if request.method == 'POST':
