@@ -8,6 +8,9 @@ from django.contrib import messages
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
+import logging
+
+logger = logging.getLogger('tracker')
 
 @require_http_methods(["GET", "POST"])
 @ratelimit(key='user_or_ip', rate='10/m')
@@ -111,9 +114,11 @@ def login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
             if user is not None:
+                logger.info(f"Successful login for user: {username}")
                 login(request, user)
                 return redirect('supplement_record')
             else:
+                logger.warning(f"Failed login attempt for username: {username}")
                 messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
