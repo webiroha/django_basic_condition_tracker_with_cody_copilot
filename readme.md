@@ -1,6 +1,6 @@
 # Supplement Tracker
 
-> **Note**: This application was developed in collaboration with Cody, an AI coding assistant from Sourcegraph.
+> **Note**: This application was developed in collaboration with Cody, an AI coding assistant from Sourcegraph and GitHub Copilot.
 
 A simple web application for tracking supplement intake. This MVP allows users to record, view, edit, and delete their supplement intake records.
 
@@ -20,7 +20,7 @@ A simple web application for tracking supplement intake. This MVP allows users t
 
 ## Live Demo
 
-You can access the live version of Supplement Tracker at: [your-deployment-url.com](https://your-deployment-url.com)
+You can access the live version of Supplement Tracker at: [django-basic-condition-tracker-with-cody.vercel.app](https://django-basic-condition-tracker-with-cody.vercel.app/)
 
 ## Getting Started
 
@@ -48,19 +48,47 @@ pip install -r requirements.txt
 poetry install
 ```
 
-3. Run migrations
+3. Create and configure `.env` file
+
+```bash
+# Create .env file
+touch .env
+chmod 600 .env
+
+# Add required environment variables
+DJANGO_SECRET_KEY=your-secret-key-here
+DJANGO_DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,.vercel.app
+REDIS_URL=redis://127.0.0.1:6379/1
+```
+
+4. Run migrations
 
 ```
 python manage.py migrate
 ```
 
-4. Start the development server
+5. Redis setup (for caching and rate limiting)
+
+```bash
+# Install Redis on macOS
+brew install redis
+brew services start redis
+```
+
+6. Start the development server
 
 ```
+
 python manage.py runserver
+
 ```
 
-5. Visit http://127.0.0.1:8000/ in your browser
+7. Visit http://127.0.0.1:8000/ in your browser
+
+## Deployment
+
+This project is configured for deployment on Vercel
 
 ## Usage
 
@@ -71,16 +99,34 @@ python manage.py runserver
 
 ## Project Status
 
-This project is currently in MVP (Minimum Viable Product) stage:
+This MVP (Minimum Viable Product) is a portfolio project using SQLite as the database. While SQLite is not recommended for large-scale production applications, it is perfectly suitable for this demonstration project that showcases:
 
-- **Development Status**: Early development, suitable for testing
-- **Security Status**: Basic authentication implemented, but not yet audited for production use
-- **Known Issues**:
-  - Form validation needs improvement
-  - No CSRF protection for API endpoints
-  - Session management could be enhanced
-  - No rate limiting implemented
-  - Password reset functionality not implemented
+Current features implemented:
+
+- ✅ User authentication
+- ✅ Rate limiting
+- ✅ Security headers
+- ✅ Logging system
+- ✅ Redis caching
+- ✅ Custom error pages
+- ✅ Environment variable validation
+
+Planned features:
+
+- 📋 Email verification
+- 📋 Password reset
+- 📋 API documentation
+- 📋 User profiles
+
+### Security Features
+
+- Rate limiting implemented with Redis
+- CSRF protection enabled
+- Secure password hashing with Argon2
+- Security headers configured
+- Environment variable validation
+- Custom error pages
+- Logging system with rotation
 
 ## License
 

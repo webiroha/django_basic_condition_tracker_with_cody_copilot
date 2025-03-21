@@ -10,3 +10,10 @@ __pycache__/
 
 # Environment variables file (if any)
 .env
+
+# Cache directory
+django_cache/
+
+# Ignore Django log files
+*.log
+django_debug.log
