@@ -9,6 +9,7 @@ from django_ratelimit.decorators import ratelimit
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 import logging
+from django.db import transaction
 
 logger = logging.getLogger('tracker')
 
@@ -89,15 +90,17 @@ def sync_data(request):
         return JsonResponse({'error': 'Invalid records format'}, status=400)
 
     try:
-        for record in local_records:
-            SupplementRecord.objects.create(
-                user=request.user,
-                supplement_name=record['supplement_name'],
-                intake_datetime=record['intake_datetime'],
-                amount=record['amount'],
-                local_id=record['id']
-            )
+        with transaction.atomic():
+            for record in local_records:
+                SupplementRecord.objects.create(
+                    user=request.user,
+                    supplement_name=record['supplement_name'],
+                    intake_datetime=record['intake_datetime'],
+                    amount=record['amount'],
+                    local_id=record['id']
+                )
     except KeyError as e:
+        logger.error(f"Sync data error: {str(e)}")
         return JsonResponse({'error': f'Missing required field: {str(e)}'}, status=400)
 
     return JsonResponse({'status': 'success'})
