@@ -135,7 +135,9 @@
         {% csrf_token %} {% for field in form %}
         <div class="form-group">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }} {% if field.errors %}
+          {% if field.name == 'password' %} {{
+          field|attr:"autocomplete:current-password"|attr:"spellcheck:false"|attr:"data-lpignore:true"
+          }} {% else %} {{ field }} {% endif %} {% if field.errors %}
           <ul class="errorlist">
             {% for error in field.errors %}
             <li>{{ error }}</li>
