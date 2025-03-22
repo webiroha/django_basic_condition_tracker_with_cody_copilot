@@ -211,6 +211,24 @@ jinja2 = ["jinja2 (>=2.9.6)"]
 tests = ["jinja2 (>=2.9.6)", "pytest", "pytest-cov", "pytest-django", "pytest-ruff"]
 
 [[package]]
+name = "django-password-validators"
+version = "1.7.3"
+description = "Additional libraries for validating passwords in Django."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django-password-validators-1.7.3.tar.gz", hash = "sha256:7175aefa6e86dc002dd3539327bf2d752097651704927dc409a669259e0d2195"},
+    {file = "django_password_validators-1.7.3-py3-none-any.whl", hash = "sha256:f243a82957e9b17a0c7cf5580f9d7588471cb6530c2dce7ee4e1222dddfe5768"},
+]
+
+[package.dependencies]
+django = ">=3.0"
+
+[package.extras]
+test = ["bump-my-version (>=0.12)", "tox (>=4.11)"]
+
+[[package]]
 name = "django-permissions-policy"
 version = "4.25.0"
 description = "Set the Permissions-Policy HTTP header on your Django app."
@@ -448,4 +466,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "a6c52671cd0483f476ec54e1bf4855a3559cf5381c36e79744fad7bd55c56230"
+content-hash = "2148ad5af1c0e21a7dfa8f7ee09945b7df5e38e49e657248a64776785a326932"
