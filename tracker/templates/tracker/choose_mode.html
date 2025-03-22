@@ -73,5 +73,12 @@
         <a href="{% url 'register' %}" class="button">Register</a>
       </div>
     </div>
+    <!-- Add session timeout handling -->
+    <script>
+        const SESSION_TIMEOUT = 48 * 60 * 60 * 1000; // 48 hours
+        setTimeout(() => {
+            window.location.href = "{% url 'logout' %}";
+        }, SESSION_TIMEOUT);
+    </script>
   </body>
 </html>
