@@ -100,10 +100,6 @@ if os.environ.get('VERCEL'):
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': '/tmp/db.sqlite3',  # Using Vercel's writable /tmp directory
-            'OPTIONS': {
-                # Disable deterministic to support older SQLite versions
-                'deterministic': False,
-            }
         }
     }
 else:
@@ -111,13 +107,8 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-            'OPTIONS': {
-                # Keep deterministic True for local development
-                'deterministic': True,
-            }
         }
     }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -139,10 +130,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Password hasher settings - adjusted for SQLite compatibility
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
 
 
