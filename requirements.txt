@@ -3,7 +3,7 @@ argon2-cffi-bindings==21.2.0
 asgiref==3.8.1
 cffi==1.17.1
 dj-database-url==2.3.0
-Django==5.1.6
+Django>=4.2.0,<5.0  # Use stable Django 4.x version
 django-permissions-policy==4.25.0
 django-ratelimit==4.1.0
 django-redis==5.4.0
@@ -17,9 +17,9 @@ pycparser==2.22
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 pytz==2025.1
-redis==5.2.1
+redis==5.0.1
 six==1.17.0
 sqlparse==0.5.3
 typing_extensions==4.12.2
 tzdata==2025.1
-whitenoise==6.9.0
+whitenoise==6.6.0
