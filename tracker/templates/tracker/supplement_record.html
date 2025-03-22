@@ -151,5 +151,15 @@
         </ul>
       </div>
     </div>
+    <!-- Add data validation -->
+    <script>
+      document.querySelector("form").addEventListener("submit", function (e) {
+        const amount = document.querySelector('input[name="amount"]');
+        if (amount.value <= 0) {
+          e.preventDefault();
+          alert("Amount must be greater than 0");
+        }
+      });
+    </script>
   </body>
 </html>
