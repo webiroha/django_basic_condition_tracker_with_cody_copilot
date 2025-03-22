@@ -191,7 +191,6 @@ if not DEBUG:  # Only enable these settings in production
 
     # Verify critical production settings
     required_settings = {
-        'REDIS_URL': os.environ.get('REDIS_URL'),
         'DJANGO_SECRET_KEY': os.environ.get('DJANGO_SECRET_KEY'),
         'ALLOWED_HOSTS': os.environ.get('ALLOWED_HOSTS'),
     }
