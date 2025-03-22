@@ -93,11 +93,39 @@
         margin: 0.5rem 0;
         font-size: 0.9rem;
       }
+      .messages {
+        margin-bottom: 1rem;
+        width: 100%;
+      }
+      .message {
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+      }
+      .message.error {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+      }
+      .message.success {
+        background-color: #dcfce7;
+        color: #16a34a;
+        border: 1px solid #bbf7d0;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h2>Login to Supplement Tracker</h2>
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       <form method="post">
         {% csrf_token %} {% for field in form %}
         <div class="form-group">
@@ -111,6 +139,12 @@
           {% endif %}
         </div>
         {% endfor %}
+        <div class="form-group">
+          <small class="rate-limit-notice">
+            Note: Multiple failed login attempts will temporarily lock your
+            account.
+          </small>
+        </div>
         <button type="submit">Login</button>
       </form>
       <div class="links">
