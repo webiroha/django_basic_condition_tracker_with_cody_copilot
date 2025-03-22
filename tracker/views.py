@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import SupplementRecordForm
@@ -109,13 +110,16 @@ def sync_data(request):
 
 @ratelimit(key='ip', rate='5/m', method=['POST'])
 def login_view(request):
-    # Clear any existing messages immediately
-    messages.get_messages(request).used = True
-
     # Initialize counters
     max_attempts = 5
     failed_attempts = request.session.get('failed_attempts', 0)
     remaining_attempts = max_attempts - failed_attempts
+
+    # Clear any existing messages
+    storage = messages.get_messages(request)
+    for message in storage:
+        pass
+    storage.used = True
 
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -133,18 +137,27 @@ def login_view(request):
                 remaining_attempts = max_attempts - failed_attempts
                 logger.warning(f"Failed login attempt for username: {username}")
                 messages.error(request, "Invalid username or password.")
+                return render(request, 'tracker/login.html', {
+                    'form': form,
+                    'failed_attempts': failed_attempts,
+                    'remaining_attempts': remaining_attempts,
+                    'max_attempts': max_attempts
+                })
+        else:
+            failed_attempts += 1
+            request.session['failed_attempts'] = failed_attempts
+            remaining_attempts = max_attempts - failed_attempts
+            messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
         request.session['failed_attempts'] = 0
 
-    context = {
+    return render(request, 'tracker/login.html', {
         'form': form,
         'failed_attempts': failed_attempts,
         'remaining_attempts': remaining_attempts,
         'max_attempts': max_attempts
-    }
-
-    return render(request, 'tracker/login.html', context)
+    })
 
 @ratelimit(key='ip', rate='3/m', method=['POST'])
 def register_view(request):

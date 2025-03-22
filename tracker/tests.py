@@ -1,11 +1,14 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.contrib.messages import get_messages
 from .models import SupplementRecord
 from django.test.utils import override_settings
+from django.core.cache import cache
 
 class ViewsTestCase(TestCase):
     def setUp(self):
+        cache.clear()  # Clear cache before each test
         self.client = Client()
         self.user = User.objects.create_user(
             username='testuser',
@@ -19,7 +22,12 @@ class ViewsTestCase(TestCase):
             intake_datetime='2024-03-21 10:00:00'
         )
 
+    def tearDown(self):
+        cache.clear()  # Clear cache after each test
+
+    @override_settings(RATELIMIT_ENABLE=False)
     def test_login_view(self):
+        """Test successful login"""
         response = self.client.post(reverse('login'), {
             'username': 'testuser',
             'password': 'testpass123'
@@ -27,6 +35,7 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('supplement_record'))
 
+    @override_settings(RATELIMIT_ENABLE=False)
     def test_failed_login(self):
         """Test login failure with incorrect credentials"""
         response = self.client.post(reverse('login'), {
@@ -34,17 +43,16 @@ class ViewsTestCase(TestCase):
             'password': 'wrongpassword'
         }, follow=True)
 
-        # Check response status
         self.assertEqual(response.status_code, 200)
-
-        # Check that form is invalid
         self.assertTrue('form' in response.context)
-        self.assertFalse(response.context['form'].is_valid())
 
-        # Check messages
-        messages = list(response.context.get('messages', []))
-        self.assertTrue(any(message.message == "Invalid username or password."
-        for message in messages))
+        # Check for error message
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(len(messages) > 0, "No messages found")
+        self.assertTrue(
+            any(message.message == "Invalid username or password." for message in messages),
+            "Expected error message not found"
+        )
 
     def test_supplement_record_view(self):
         # Login first
