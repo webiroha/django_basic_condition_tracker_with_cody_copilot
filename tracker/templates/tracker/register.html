@@ -98,6 +98,21 @@
         margin: 0.5rem 0;
         font-size: 0.9rem;
       }
+      .password-strength {
+        margin-top: 1rem;
+      }
+      .strength-meter {
+        height: 5px;
+        background: #ddd;
+        border-radius: 5px;
+        margin-top: 0.5rem;
+      }
+      .strength-text {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        color: #2c3e50;
+      }
     </style>
   </head>
   <body>
@@ -116,6 +131,11 @@
           {% endif %}
         </div>
         {% endfor %}
+        <!-- Add password strength indicator -->
+        <div class="password-strength">
+          <div class="strength-meter"></div>
+          <small class="strength-text"></small>
+        </div>
         <button type="submit">Register</button>
       </form>
       <div class="links">
