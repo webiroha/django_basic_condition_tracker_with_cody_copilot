@@ -192,6 +192,43 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-csp"
+version = "3.8"
+description = "Django Content Security Policy support."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django_csp-3.8-py3-none-any.whl", hash = "sha256:19b2978b03fcd73517d7d67acbc04fbbcaec0facc3e83baa502965892d1e0719"},
+    {file = "django_csp-3.8.tar.gz", hash = "sha256:ef0f1a9f7d8da68ae6e169c02e9ac661c0ecf04db70e0d1d85640512a68471c0"},
+]
+
+[package.dependencies]
+Django = ">=3.2"
+
+[package.extras]
+jinja2 = ["jinja2 (>=2.9.6)"]
+tests = ["jinja2 (>=2.9.6)", "pytest", "pytest-cov", "pytest-django", "pytest-ruff"]
+
+[[package]]
+name = "django-password-validators"
+version = "1.7.3"
+description = "Additional libraries for validating passwords in Django."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django-password-validators-1.7.3.tar.gz", hash = "sha256:7175aefa6e86dc002dd3539327bf2d752097651704927dc409a669259e0d2195"},
+    {file = "django_password_validators-1.7.3-py3-none-any.whl", hash = "sha256:f243a82957e9b17a0c7cf5580f9d7588471cb6530c2dce7ee4e1222dddfe5768"},
+]
+
+[package.dependencies]
+django = ">=3.0"
+
+[package.extras]
+test = ["bump-my-version (>=0.12)", "tox (>=4.11)"]
+
+[[package]]
 name = "django-permissions-policy"
 version = "4.25.0"
 description = "Set the Permissions-Policy HTTP header on your Django app."
@@ -237,6 +274,20 @@ redis = ">=3,<4.0.0 || >4.0.0,<4.0.1 || >4.0.1"
 
 [package.extras]
 hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
+
+[[package]]
+name = "django-secure"
+version = "1.0.2"
+description = "Utilities and a 'linter' to help you make your Django site more secure."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "django-secure-1.0.2.tar.gz", hash = "sha256:b9511e5be1399616649be0402e341382ea40ba361efd48a81a0bbd3efc77f197"},
+]
+
+[package.dependencies]
+Django = ">=1.4.2"
 
 [[package]]
 name = "psycopg2-binary"
@@ -415,4 +466,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13"
-content-hash = "904a64bb93ef3ec61a08c49ef1001e0216e4d8ddfeee16dead8e32b02eb1b0bb"
+content-hash = "2148ad5af1c0e21a7dfa8f7ee09945b7df5e38e49e657248a64776785a326932"

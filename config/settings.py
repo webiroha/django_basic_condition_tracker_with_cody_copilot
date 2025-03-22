@@ -45,12 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tracker',
+    'tracker.templatetags',
+    'django_ratelimit',
 ]
-
-INSTALLED_APPS += ['django_ratelimit']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django_permissions_policy.PermissionsPolicyMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -216,6 +217,8 @@ X_FRAME_OPTIONS = 'DENY'
 
 # Additional security headers
 SECURE_REFERRER_POLICY = 'same-origin'
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 
 # Add session security settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
@@ -332,7 +335,7 @@ def validate_env_vars():
 
     if not DEBUG:
         missing = [var for var, msg in required_vars.items()
-                  if not config(var, default=None)]
+            if not config(var, default=None)]
         if missing:
             raise ImproperlyConfigured(
                 f"Missing required environment variables: {', '.join(missing)}"
