@@ -1,3 +1,4 @@
+{% load static form_filters %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -144,9 +145,18 @@
         {% csrf_token %} {% for field in form %}
         <div class="form-group">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {% if field.name == 'password' %} {{
-          field|attr:"autocomplete:current-password"|attr:"spellcheck:false"|attr:"data-lpignore:true"
-          }} {% else %} {{ field }} {% endif %} {% if field.errors %}
+          <!-- prettier-ignore -->
+          {% if field.name == 'password' %}
+          <input
+            type="password"
+            name="password"
+            id="{{ field.id_for_label }}"
+            class="form-control"
+            autocomplete="current-password"
+            spellcheck="false"
+            data-lpignore="true"
+          />
+          {% else %} {{ field }} {% endif %} {% if field.errors %}
           <ul class="errorlist">
             {% for error in field.errors %}
             <li>{{ error }}</li>

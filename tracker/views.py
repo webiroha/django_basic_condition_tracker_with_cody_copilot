@@ -110,6 +110,13 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 @ratelimit(key='ip', rate='5/m', method=['POST'])
 def login_view(request):
+    if request.method == 'GET':
+        # Clear any existing messages on fresh login page load
+        storage = messages.get_messages(request)
+        for message in storage:
+            pass  # Iterating clears the messages
+        storage.used = True
+
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -124,12 +131,9 @@ def login_view(request):
             else:
                 logger.warning(f"Failed login attempt for username: {username}")
                 messages.error(request, "Invalid username or password.")
-                return render(request, 'tracker/login.html', {'form': form})
-        else:
-            messages.error(request, "Invalid username or password.")
-            return render(request, 'tracker/login.html', {'form': form})
     else:
         form = AuthenticationForm()
+
     return render(request, 'tracker/login.html', {'form': form})
 
 @ratelimit(key='ip', rate='3/m', method=['POST'])

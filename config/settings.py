@@ -45,9 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tracker',
+    'tracker.templatetags',
+    'django_ratelimit',
 ]
-
-INSTALLED_APPS += ['django_ratelimit']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
