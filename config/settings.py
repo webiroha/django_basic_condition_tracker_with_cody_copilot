@@ -54,7 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line if not present
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'csp.middleware.CSPMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django_permissions_policy.PermissionsPolicyMiddleware',
@@ -235,7 +235,10 @@ X_FRAME_OPTIONS = 'DENY'
 # Additional security headers
 SECURE_REFERRER_POLICY = 'same-origin'
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # Allow inline styles
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")  # For development
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_FONT_SRC = ("'self'", "https:", "data:")
 
 # Add session security settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
@@ -300,7 +303,7 @@ else:
         'disable_existing_loggers': False,
         'formatters': {
             'simple': {
-                'format': '[%(asctime)s] %(levelname)s: %(message)s',  # Fixed: changed levellevel to levelname
+                'format': '[%(asctime)s] %(levelname)s: %(message)s',
                 'datefmt': '%Y-%m-%d %H:%M:%S'
             }
         },
