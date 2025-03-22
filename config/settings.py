@@ -97,10 +97,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database configuration for both local and Vercel
 if os.environ.get('VERCEL'):
     DATABASES = {
-        'default': dj_database_url.config(
-            default='sqlite:///tmp/db.sqlite3',
-            conn_max_age=600
-        )
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/tmp/db.sqlite3',  # Using Vercel's writable /tmp directory
+        }
     }
 else:
     DATABASES = {
