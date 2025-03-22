@@ -145,7 +145,6 @@
         {% csrf_token %} {% for field in form %}
         <div class="form-group">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          <!-- prettier-ignore -->
           {% if field.name == 'password' %}
           <input
             type="password"
@@ -165,12 +164,16 @@
           {% endif %}
         </div>
         {% endfor %}
-        <div class="form-group">
-          <small class="rate-limit-notice">
-            Note: Multiple failed login attempts will temporarily lock your
-            account.
-          </small>
+
+        <!-- Move rate limit notice here and only show after failed attempts -->
+        {% if failed_attempts > 0 %}
+        <div class="rate-limit-notice">
+          Note: Multiple failed login attempts will temporarily lock your
+          account. {% if failed_attempts > 2 %} ({{ remaining_attempts }}
+          attempts remaining) {% endif %}
         </div>
+        {% endif %}
+
         <button type="submit">Login</button>
       </form>
       <div class="links">

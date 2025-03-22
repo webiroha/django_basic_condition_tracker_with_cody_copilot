@@ -110,12 +110,10 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 @ratelimit(key='ip', rate='5/m', method=['POST'])
 def login_view(request):
-    if request.method == 'GET':
-        # Clear any existing messages on fresh login page load
-        storage = messages.get_messages(request)
-        for message in storage:
-            pass  # Iterating clears the messages
-        storage.used = True
+    # Initialize counters
+    max_attempts = 5
+    failed_attempts = request.session.get('failed_attempts', 0)
+    remaining_attempts = max_attempts - failed_attempts
 
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -125,16 +123,34 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                # Reset failed attempts on successful login
+                request.session['failed_attempts'] = 0
                 messages.success(request, "Login successful!")
-                next_url = request.GET.get('next', 'supplement_record')
-                return redirect(next_url)
+                return redirect('supplement_record')
             else:
+                # Increment failed attempts
+                failed_attempts += 1
+                request.session['failed_attempts'] = failed_attempts
+                remaining_attempts = max_attempts - failed_attempts
                 logger.warning(f"Failed login attempt for username: {username}")
                 messages.error(request, "Invalid username or password.")
+        else:
+            # Increment failed attempts for invalid form
+            failed_attempts += 1
+            request.session['failed_attempts'] = failed_attempts
+            remaining_attempts = max_attempts - failed_attempts
+            messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
 
-    return render(request, 'tracker/login.html', {'form': form})
+    context = {
+        'form': form,
+        'failed_attempts': failed_attempts,
+        'remaining_attempts': remaining_attempts,
+        'max_attempts': max_attempts
+    }
+
+    return render(request, 'tracker/login.html', context)
 
 @ratelimit(key='ip', rate='3/m', method=['POST'])
 def register_view(request):
