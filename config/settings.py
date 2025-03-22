@@ -246,6 +246,18 @@ SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
 
+# Minimal logging configuration
+LOGGING_CONFIG = None
+LOGGING = None
+
+# Replace the basic logging configuration
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s',  # Fixed: changed levellevel to levelname
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
 # Base Logging Configuration
 if IS_VERCEL:
     # Vercel: Console-only logging
@@ -254,7 +266,7 @@ if IS_VERCEL:
         'disable_existing_loggers': False,
         'formatters': {
             'simple': {
-                'format': '[%(asctime)s] %(levelname)s: %(message)s',
+                'format': '[%(asctime)s] %(levelname)s: %(message)s',  # Fixed: changed levellevel to levelname
                 'datefmt': '%Y-%m-%d %H:%M:%S'
             }
         },
@@ -288,7 +300,7 @@ else:
         'disable_existing_loggers': False,
         'formatters': {
             'simple': {
-                'format': '[%(asctime)s] %(levellevel)s: %(message)s',
+                'format': '[%(asctime)s] %(levelname)s: %(message)s',  # Fixed: changed levellevel to levelname
                 'datefmt': '%Y-%m-%d %H:%M:%S'
             }
         },
