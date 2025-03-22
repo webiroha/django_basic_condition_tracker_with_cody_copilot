@@ -52,10 +52,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line if not present
     'csp.middleware.CSPMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django_permissions_policy.PermissionsPolicyMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -151,12 +151,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-# Consolidate static files settings
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if not os.environ.get('VERCEL') else []
+# Static files configuration
+STATIC_URL = 'static/'
+STATIC_ROOT = '/tmp/static' if os.environ.get('VERCEL') else os.path.join(BASE_DIR, 'static')
+
+# Ensure WhiteNoise is properly configured
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Consolidate static files settings
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if not os.environ.get('VERCEL') else []
 WHITENOISE_MAX_AGE = 31536000  # 1 year
+
+# Update the makedirs logic
+if not os.environ.get('VERCEL'):
+    os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -285,8 +293,6 @@ LOGGING['loggers']['django.request'] = {
     'level': 'WARNING',
     'propagate': True,
 }
-
-os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
 # Cache Configuration
 # Update cache settings based on environment
