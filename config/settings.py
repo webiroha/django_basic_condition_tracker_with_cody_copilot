@@ -100,6 +100,10 @@ if os.environ.get('VERCEL'):
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': '/tmp/db.sqlite3',  # Using Vercel's writable /tmp directory
+            'OPTIONS': {
+                # Disable deterministic to support older SQLite versions
+                'deterministic': False,
+            }
         }
     }
 else:
@@ -107,6 +111,10 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                # Keep deterministic True for local development
+                'deterministic': True,
+            }
         }
     }
 
