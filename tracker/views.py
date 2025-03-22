@@ -10,6 +10,8 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 import logging
 from django.db import transaction
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 logger = logging.getLogger('tracker')
 
@@ -105,11 +107,11 @@ def sync_data(request):
 
     return JsonResponse({'status': 'success'})
 
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-
 @ratelimit(key='ip', rate='5/m', method=['POST'])
 def login_view(request):
+    # Clear any existing messages immediately
+    messages.get_messages(request).used = True
+
     # Initialize counters
     max_attempts = 5
     failed_attempts = request.session.get('failed_attempts', 0)
@@ -123,25 +125,17 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                # Reset failed attempts on successful login
                 request.session['failed_attempts'] = 0
-                messages.success(request, "Login successful!")
                 return redirect('supplement_record')
             else:
-                # Increment failed attempts
                 failed_attempts += 1
                 request.session['failed_attempts'] = failed_attempts
                 remaining_attempts = max_attempts - failed_attempts
                 logger.warning(f"Failed login attempt for username: {username}")
                 messages.error(request, "Invalid username or password.")
-        else:
-            # Increment failed attempts for invalid form
-            failed_attempts += 1
-            request.session['failed_attempts'] = failed_attempts
-            remaining_attempts = max_attempts - failed_attempts
-            messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
+        request.session['failed_attempts'] = 0
 
     context = {
         'form': form,
@@ -166,3 +160,11 @@ def register_view(request):
     else:
         form = UserCreationForm()
     return render(request, 'tracker/register.html', {'form': form})
+
+def logout_view(request):
+    # Clear messages before logout
+    messages.get_messages(request).used = True
+    logout(request)
+    if 'failed_attempts' in request.session:
+        del request.session['failed_attempts']
+    return redirect('login')
