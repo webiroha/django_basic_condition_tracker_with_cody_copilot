@@ -91,14 +91,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Database configuration - Using SQLite for both development and production
+# Database configuration - Using SQLite for simplicity
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -281,43 +280,32 @@ LOGGING['loggers']['django.request'] = {
 
 os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
-# Cache settings
-"""
-Cache Configuration
------------------
-BACKEND: Redis cache for both development and production
-TIMEOUT: 5 minutes (300 seconds)
-MAX_ENTRIES: 1000 entries maximum
-KEY_PREFIX: Environment-aware prefixing (dev/prod)
-"""
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
-        'TIMEOUT': 300,  # 5 minutes default timeout
-        'KEY_PREFIX': 'dev' if DEBUG else 'prod',
+# Cache Configuration
+# Update cache settings based on environment
+if os.environ.get('VERCEL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+            'LOCATION': '127.0.0.1:11211',
+        }
+    }
 
-if not DEBUG and not os.environ.get('REDIS_URL'):
-    import warnings
-    warnings.warn("Redis URL not set in production environment")
-
-"""
-Rate Limiting Configuration
--------------------------
-- Global rate limiting enabled
-- Uses Redis cache backend
-- Strict limiting with fail_open=False
-- IP detection via X-Forwarded-For
-- Custom error response on limit exceeded
-"""
-
+# Update rate limiting settings
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_FAIL_OPEN = False
-RATELIMIT_IP_META = 'HTTP_X_FORWARDED_FOR'
-RATELIMIT_VIEW = 'django.http.HttpResponseForbidden'
+
+# Ignore rate limit warnings in development
+if DEBUG:
+    import logging
+    logging.getLogger('django_ratelimit').setLevel(logging.ERROR)
 
 PERMISSIONS_POLICY = {
     'geolocation': 'none',
@@ -330,7 +318,6 @@ def validate_env_vars():
     required_vars = {
         'DJANGO_SECRET_KEY': 'Required for security',
         'ALLOWED_HOSTS': 'Required in production',
-        'REDIS_URL': 'Required for caching in production'
     }
 
     if not DEBUG:
