@@ -91,14 +91,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Database configuration - Using SQLite for both development and production
+# Database configuration - Using SQLite for simplicity
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -294,8 +293,9 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
-        'TIMEOUT': 300,  # 5 minutes default timeout
-        'KEY_PREFIX': 'dev' if DEBUG else 'prod',
+        'OPTIONS': {
+            'pool_class': 'redis.connection.BlockingConnectionPool',
+        }
     }
 }
 
