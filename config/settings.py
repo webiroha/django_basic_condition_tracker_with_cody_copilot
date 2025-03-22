@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from decouple import config, Csv, UndefinedValueError
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured  # Add this line
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
