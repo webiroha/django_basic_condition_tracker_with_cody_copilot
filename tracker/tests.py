@@ -28,12 +28,23 @@ class ViewsTestCase(TestCase):
         self.assertRedirects(response, reverse('supplement_record'))
 
     def test_failed_login(self):
+        """Test login failure with incorrect credentials"""
         response = self.client.post(reverse('login'), {
             'username': 'testuser',
             'password': 'wrongpassword'
-        })
+        }, follow=True)
+
+        # Check response status
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Invalid username or password")
+
+        # Check that form is invalid
+        self.assertTrue('form' in response.context)
+        self.assertFalse(response.context['form'].is_valid())
+
+        # Check messages
+        messages = list(response.context.get('messages', []))
+        self.assertTrue(any(message.message == "Invalid username or password."
+        for message in messages))
 
     def test_supplement_record_view(self):
         # Login first

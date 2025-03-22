@@ -117,12 +117,17 @@ def login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
             if user is not None:
-                logger.info(f"Successful login for user: {username}")
                 login(request, user)
-                return redirect('supplement_record')
+                messages.success(request, "Login successful!")
+                next_url = request.GET.get('next', 'supplement_record')
+                return redirect(next_url)
             else:
                 logger.warning(f"Failed login attempt for username: {username}")
                 messages.error(request, "Invalid username or password.")
+                return render(request, 'tracker/login.html', {'form': form})
+        else:
+            messages.error(request, "Invalid username or password.")
+            return render(request, 'tracker/login.html', {'form': form})
     else:
         form = AuthenticationForm()
     return render(request, 'tracker/login.html', {'form': form})
