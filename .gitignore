@@ -17,3 +17,7 @@ django_cache/
 # Ignore Django log files
 *.log
 django_debug.log
+
+# Static files
+staticfiles/
+/static/
