@@ -111,13 +111,6 @@ Current features implemented:
 - ✅ Custom error pages
 - ✅ Environment variable validation
 
-Planned features:
-
-- 📋 Email verification
-- 📋 Password reset
-- 📋 API documentation
-- 📋 User profiles
-
 ### Security Features
 
 - Rate limiting implemented with Redis
