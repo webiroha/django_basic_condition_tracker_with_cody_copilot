@@ -4,6 +4,7 @@
 # Python cache files
 __pycache__/
 *.py[cod]
+*.pyc
 
 # Database files (if using SQLite)
 *.sqlite3

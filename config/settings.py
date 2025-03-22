@@ -19,6 +19,8 @@ from django.core.exceptions import ImproperlyConfigured  # Add this line
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Determine environment
+IS_VERCEL = bool(os.environ.get('VERCEL', False))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -153,16 +155,21 @@ USE_TZ = True
 
 # Static files configuration
 STATIC_URL = 'static/'
-STATIC_ROOT = '/tmp/static' if os.environ.get('VERCEL') else os.path.join(BASE_DIR, 'static')
+
+if os.environ.get('VERCEL'):
+    STATIC_ROOT = '/tmp/static'
+    STATICFILES_DIRS = []  # Empty for Vercel
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Changed from 'static'
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static')
+    ]
 
 # Ensure WhiteNoise is properly configured
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Consolidate static files settings
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if not os.environ.get('VERCEL') else []
 WHITENOISE_MAX_AGE = 31536000  # 1 year
 
-# Update the makedirs logic
+# Create static directory if it doesn't exist (local development only)
 if not os.environ.get('VERCEL'):
     os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
@@ -175,11 +182,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'  # Remove leading slash
 LOGIN_REDIRECT_URL = 'supplement_record'  # Use URL name instead of path
 LOGOUT_REDIRECT_URL = 'choose_mode'  # Use URL name instead of path
-
-if os.environ.get('VERCEL'):
-    STATICFILES_DIRS = []
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-    STATIC_URL = '/static/'
 
 # Security settings - Make them conditional based on environment
 if not DEBUG:  # Only enable these settings in production
@@ -244,48 +246,82 @@ SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
 
-# Logging Configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+# Base Logging Configuration
+if IS_VERCEL:
+    # Vercel: Console-only logging
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'simple': {
+                'format': '[%(asctime)s] %(levelname)s: %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S'
+            }
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+            }
         },
-    },
-    'handlers': {
-        'console': {
+        'root': {
+            'handlers': ['console'],
             'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
         },
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'django.log'),
-            'maxBytes': 1024*1024*5,  # 5 MB
-            'backupCount': 5,
-            'formatter': 'verbose',
+        'loggers': {
+            'django': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'django.request': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
+            }
+        }
+    }
+else:
+    # Local: Console and file logging
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'simple': {
+                'format': '[%(asctime)s] %(levellevel)s: %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S'
+            }
         },
-    },
-    'loggers': {
-        'django': {
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+            },
+            'file': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': os.path.join(BASE_DIR, 'django.log'),
+                'maxBytes': 1024*1024*5,  # 5 MB
+                'backupCount': 5,
+                'formatter': 'simple',
+            }
+        },
+        'root': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
-            'propagate': True,
         },
-        'tracker': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
+        'loggers': {
+            'django': {
+                'handlers': ['console', 'file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'django.request': {
+                'handlers': ['console', 'file'],
+                'level': 'WARNING',
+                'propagate': False,
+            }
+        }
+    }
 
 # Add request logging for security monitoring
 LOGGING['loggers']['django.request'] = {
