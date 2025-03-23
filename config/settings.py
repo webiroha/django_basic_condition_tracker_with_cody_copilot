@@ -19,9 +19,6 @@ from django.core.exceptions import ImproperlyConfigured  # Add this line
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Determine environment
-IS_VERCEL = bool(os.environ.get('VERCEL', False))
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -36,7 +33,6 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 # Get allowed hosts from environment variable or use defaults
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
-
 
 # Application definition
 
@@ -94,21 +90,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Database configuration for both local and Vercel
-if os.environ.get('VERCEL'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/tmp/db.sqlite3',  # Using Vercel's writable /tmp directory
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -154,16 +142,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 # Static files configuration
-STATIC_URL = 'static/'
-
-if os.environ.get('VERCEL'):
-    STATIC_ROOT = '/tmp/static'
-    STATICFILES_DIRS = []  # Empty for Vercel
-else:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Changed from 'static'
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static')
-    ]
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
 
 # Ensure WhiteNoise is properly configured
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -218,6 +201,9 @@ else:  # Development settings
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
 
+# Cookie names are already conditionally set based on DEBUG mode
+SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
+CSRF_COOKIE_NAME = '__Secure-csrftoken' if not DEBUG else 'csrftoken'
 
 """
 Security Headers Configuration
@@ -243,118 +229,52 @@ CSP_FONT_SRC = ("'self'", "https:", "data:")
 # Add session security settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
 
-# Minimal logging configuration
-LOGGING_CONFIG = None
-LOGGING = None
-
-# Replace the basic logging configuration
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(levelname)s: %(message)s',  # Fixed: changed levellevel to levelname
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-
-# Base Logging Configuration
-if IS_VERCEL:
-    # Vercel: Console-only logging
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'simple': {
-                'format': '[%(asctime)s] %(levelname)s: %(message)s',  # Fixed: changed levellevel to levelname
-                'datefmt': '%Y-%m-%d %H:%M:%S'
-            }
+# Keep only one logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
         },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'simple',
-            }
-        },
-        'root': {
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django.request': {
             'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'loggers': {
-            'django': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'django.request': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
-            }
+            'level': 'WARNING',
+            'propagate': True,
         }
     }
-else:
-    # Local: Console and file logging
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'simple': {
-                'format': '[%(asctime)s] %(levelname)s: %(message)s',
-                'datefmt': '%Y-%m-%d %H:%M:%S'
-            }
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'simple',
-            },
-            'file': {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'filename': os.path.join(BASE_DIR, 'django.log'),
-                'maxBytes': 1024*1024*5,  # 5 MB
-                'backupCount': 5,
-                'formatter': 'simple',
-            }
-        },
-        'root': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-        },
-        'loggers': {
-            'django': {
-                'handlers': ['console', 'file'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'django.request': {
-                'handlers': ['console', 'file'],
-                'level': 'WARNING',
-                'propagate': False,
-            }
-        }
-    }
+}
 
 # Add request logging for security monitoring
 LOGGING['loggers']['django.request'] = {
-    'handlers': ['console', 'file'],
+    'handlers': ['console'],
     'level': 'WARNING',
     'propagate': True,
 }
 
 # Cache Configuration
-# Update cache settings based on environment
-if os.environ.get('VERCEL'):
+# Update cache configuration based on environment
+if os.environ.get('PYTHONANYWHERE'):
+    # Use file-based cache for PythonAnywhere
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/tmp/django_cache',
         }
     }
 else:
+    # Use memcached for local development
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
@@ -362,8 +282,7 @@ else:
         }
     }
 
-# Update rate limiting settings
-RATELIMIT_ENABLE = True
+# Update rate limiting to work with file-based cache
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_FAIL_OPEN = False
 
