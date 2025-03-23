@@ -14,10 +14,10 @@ import os
 from pathlib import Path
 from decouple import config, Csv, UndefinedValueError
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured  # Add this line
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -33,7 +33,6 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 # Get allowed hosts from environment variable or use defaults
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
-
 
 # Application definition
 
@@ -51,10 +50,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'csp.middleware.CSPMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django_permissions_policy.PermissionsPolicyMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,21 +90,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Database configuration for both local and Vercel
-if os.environ.get('VERCEL'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/tmp/db.sqlite3',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -128,10 +118,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Password hasher settings - adjusted for SQLite compatibility
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
 
 
@@ -150,12 +141,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-# Consolidate static files settings
+# Static files configuration
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if not os.environ.get('VERCEL') else []
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+
+# Ensure WhiteNoise is properly configured
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 WHITENOISE_MAX_AGE = 31536000  # 1 year
+
+# Create static directory if it doesn't exist (local development only)
+if not os.environ.get('VERCEL'):
+    os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -166,11 +165,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'  # Remove leading slash
 LOGIN_REDIRECT_URL = 'supplement_record'  # Use URL name instead of path
 LOGOUT_REDIRECT_URL = 'choose_mode'  # Use URL name instead of path
-
-if os.environ.get('VERCEL'):
-    STATICFILES_DIRS = []
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-    STATIC_URL = '/static/'
 
 # Security settings - Make them conditional based on environment
 if not DEBUG:  # Only enable these settings in production
@@ -190,7 +184,6 @@ if not DEBUG:  # Only enable these settings in production
 
     # Verify critical production settings
     required_settings = {
-        'REDIS_URL': os.environ.get('REDIS_URL'),
         'DJANGO_SECRET_KEY': os.environ.get('DJANGO_SECRET_KEY'),
         'ALLOWED_HOSTS': os.environ.get('ALLOWED_HOSTS'),
     }
@@ -208,6 +201,9 @@ else:  # Development settings
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
 
+# Cookie names are already conditionally set based on DEBUG mode
+SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
+CSRF_COOKIE_NAME = '__Secure-csrftoken' if not DEBUG else 'csrftoken'
 
 """
 Security Headers Configuration
@@ -225,79 +221,60 @@ X_FRAME_OPTIONS = 'DENY'
 # Additional security headers
 SECURE_REFERRER_POLICY = 'same-origin'
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # Allow inline styles
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")  # For development
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_FONT_SRC = ("'self'", "https:", "data:")
 
 # Add session security settings
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_NAME = '__Secure-sessionid' if not DEBUG else 'sessionid'
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
 
-# Logging Configuration
+# Keep only one logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
     'handlers': {
         'console': {
-            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
         },
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'django.log'),
-            'maxBytes': 1024*1024*5,  # 5 MB
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
     'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',
             'propagate': True,
-        },
-        'tracker': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
+        }
+    }
 }
 
 # Add request logging for security monitoring
 LOGGING['loggers']['django.request'] = {
-    'handlers': ['console', 'file'],
+    'handlers': ['console'],
     'level': 'WARNING',
     'propagate': True,
 }
 
-os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
-
 # Cache Configuration
-# Update cache settings based on environment
-if os.environ.get('VERCEL'):
+# Update cache configuration based on environment
+if os.environ.get('PYTHONANYWHERE'):
+    # Use file-based cache for PythonAnywhere
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/tmp/django_cache',
         }
     }
 else:
+    # Use memcached for local development
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
@@ -305,8 +282,7 @@ else:
         }
     }
 
-# Update rate limiting settings
-RATELIMIT_ENABLE = True
+# Update rate limiting to work with file-based cache
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_FAIL_OPEN = False
 
