@@ -1,6 +1,6 @@
 # Supplement Tracker
 
-> **Note**: This application was developed in collaboration with Cody, an AI coding assistant from Sourcegraph and GitHub Copilot.
+> **Note**: This application was developed in collaboration with Cody, an AI coding assistant from Sourcegraph and GitHub Copilot. (Cody designed UI/UX)
 
 A simple web application for tracking supplement intake. This MVP allows users to record, view, edit, and delete their supplement intake records.
 
@@ -15,12 +15,13 @@ A simple web application for tracking supplement intake. This MVP allows users t
 
 - Backend: Django
 - Frontend: HTML, CSS, JavaScript
-- Database: SQLite (development)
+- Database: SQLite
+- Cache: File-based (Production), Memcached (Development)
 - Authentication: Django's built-in authentication system
 
 ## Live Demo
 
-You can access the live version of Supplement Tracker at: [django-basic-condition-tracker-with-cody.vercel.app](https://django-basic-condition-tracker-with-cody.vercel.app/)
+You can access the live version of Supplement Tracker at: [webiroha.pythonanywhere.com](https://webiroha.pythonanywhere.com/)
 
 ## Getting Started
 
@@ -34,8 +35,8 @@ You can access the live version of Supplement Tracker at: [django-basic-conditio
 1. Clone the repository
 
 ```
-git clone https://github.com/yourusername/supplement-tracker.git
-cd supplement-tracker
+git clone git@github.com:webiroha/django-basic-condition-tracker-with-cody.git
+cd django-basic-condition-tracker-with-cody
 ```
 
 2. Install dependencies
@@ -59,7 +60,6 @@ chmod 600 .env
 DJANGO_SECRET_KEY=your-secret-key-here
 DJANGO_DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,.vercel.app
-REDIS_URL=redis://127.0.0.1:6379/1
 ```
 
 4. Run migrations
@@ -68,15 +68,7 @@ REDIS_URL=redis://127.0.0.1:6379/1
 python manage.py migrate
 ```
 
-5. Redis setup (for caching and rate limiting)
-
-```bash
-# Install Redis on macOS
-brew install redis
-brew services start redis
-```
-
-6. Start the development server
+5. Start the development server
 
 ```
 
@@ -84,11 +76,11 @@ python manage.py runserver
 
 ```
 
-7. Visit http://127.0.0.1:8000/ in your browser
+6. Visit http://127.0.0.1:8000/ in your browser
 
 ## Deployment
 
-This project is configured for deployment on Vercel
+This project is configured for deployment on PythonAnywhere
 
 ## Usage
 
@@ -106,20 +98,21 @@ Current features implemented:
 - ✅ User authentication
 - ✅ Rate limiting
 - ✅ Security headers
-- ✅ Logging system
-- ✅ Redis caching
+- ✅ File-based caching
 - ✅ Custom error pages
 - ✅ Environment variable validation
+- ✅ Content Security Policy
+- ✅ Permissions Policy
 
 ### Security Features
 
-- Rate limiting implemented with Redis
+- Rate limiting implemented
 - CSRF protection enabled
-- Secure password hashing with Argon2
+- PBKDF2 password hashing
 - Security headers configured
 - Environment variable validation
 - Custom error pages
-- Logging system with rotation
+- Basic logging system
 
 ## License
 
