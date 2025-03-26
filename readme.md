@@ -16,12 +16,8 @@ A simple web application for tracking supplement intake. This MVP allows users t
 - Backend: Django
 - Frontend: HTML, CSS, JavaScript
 - Database: SQLite
-- Cache: File-based (Production), Memcached (Development)
+- Cache: Memcached
 - Authentication: Django's built-in authentication system
-
-## Live Demo
-
-You can access the live version of Supplement Tracker at: [webiroha.pythonanywhere.com](https://webiroha.pythonanywhere.com/)
 
 ## Getting Started
 
@@ -106,12 +102,13 @@ Current features implemented:
 
 ### Security Features
 
-- Rate limiting implemented
+- Rate limiting with Memcached cache
 - CSRF protection enabled
 - PBKDF2 password hashing
 - Security headers configured
 - Environment variable validation
-- Custom error pages
+- Custom error pages (404, 403, 500)
+- Content Security Policy
 - Basic logging system
 
 ## License
